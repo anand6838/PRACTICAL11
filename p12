@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Travel Planner Demo</title>
+<style>
+    body { font-family: Arial, sans-serif; padding: 20px; background: #f0f0f0; }
+    h1 { text-align: center; }
+    .container { display: flex; gap: 20px; flex-wrap: wrap; }
+    .city-card { width: 120px; padding: 10px; background: #ffcc66; margin: 10px; cursor: grab; text-align: center; border-radius: 8px; }
+    #tripZone { flex: 1; min-height: 200px; border: 2px dashed #333; padding: 10px; border-radius: 8px; background: #fff; }
+    button { margin: 10px 0; padding: 5px 10px; }
+</style>
+</head>
+<body>
+
+<h1>🌍 Travel Planner</h1>
+
+<button id="findMe">Find My Location</button>
+<p id="locationOutput"></p>
+
+<h2>Available Cities (Drag to My Trip)</h2>
+<div class="container" id="cityContainer">
+    <div class="city-card" draggable="true" data-city="Paris">Paris</div>
+    <div class="city-card" draggable="true" data-city="Tokyo">Tokyo</div>
+    <div class="city-card" draggable="true" data-city="New York">New York</div>
+    <div class="city-card" draggable="true" data-city="Sydney">Sydney</div>
+</div>
+
+<h2>My Trip</h2>
+<div id="tripZone">Drop cities here</div>
+
+<button id="saveTrip">Save Trip</button>
+<button id="loadTrip">Load Trip</button>
+
+<script>
+    // --- Drag & Drop ---
+    const cityCards = document.querySelectorAll('.city-card');
+    const tripZone = document.getElementById('tripZone');
+
+    cityCards.forEach(card => {
+        card.addEventListener('dragstart', e => {
+            e.dataTransfer.setData('text', e.target.dataset.city);
+        });
+    });
+
+    tripZone.addEventListener('dragover', e => e.preventDefault());
+
+    tripZone.addEventListener('drop', e => {
+        e.preventDefault();
+        const cityName = e.dataTransfer.getData('text');
+        if (!Array.from(tripZone.children).some(child => child.dataset.city === cityName)) {
+            const newCard = document.createElement('div');
+            newCard.textContent = cityName;
+            newCard.className = 'city-card';
+            newCard.dataset.city = cityName;
+            tripZone.appendChild(newCard);
+        }
+    });
+
+    // --- Geolocation ---
+    const findMeBtn = document.getElementById('findMe');
+    const locationOutput = document.getElementById('locationOutput');
+
+    findMeBtn.addEventListener('click', () => {
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(position => {
+                const lat = position.coords.latitude;
+                const lon = position.coords.longitude;
+                locationOutput.textContent = `Your location: Latitude ${lat}, Longitude ${lon}`;
+            }, error => {
+                locationOutput.textContent = `Error: ${error.message}`;
+            });
+        } else {
+            locationOutput.textContent = 'Geolocation not supported';
+        }
+    });
+
+    // --- Web Storage ---
+    const saveBtn = document.getElementById('saveTrip');
+    const loadBtn = document.getElementById('loadTrip');
+
+    saveBtn.addEventListener('click', () => {
+        const cities = Array.from(tripZone.children).map(child => child.dataset.city);
+        localStorage.setItem('myTrip', JSON.stringify(cities));
+        alert('Trip saved!');
+    });
+
+    loadBtn.addEventListener('click', () => {
+        const saved = JSON.parse(localStorage.getItem('myTrip') || '[]');
+        tripZone.innerHTML = '';
+        saved.forEach(city => {
+            const newCard = document.createElement('div');
+            newCard.textContent = city;
+            newCard.className = 'city-card';
+            newCard.dataset.city = city;
+            tripZone.appendChild(newCard);
+        });
+    });
+</script>
+
+</body>
+</html>
